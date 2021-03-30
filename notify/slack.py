@@ -40,10 +40,14 @@ def format_available_message(locations):
         "s" if len(locations) > 1 else "",
     )
     for location in locations:
+        if "locationDescription" in location:
+            location_description = location['locationDescription']
+        else:
+            location_description = ""
         if "earliest_appointment_day" in location:
             if (
-                location["earliest_appointment_day"]
-                == location["latest_appointment_day"]
+                    location["earliest_appointment_day"]
+                    == location["latest_appointment_day"]
             ):
                 day_string = " on *{}*".format(location["earliest_appointment_day"])
             else:
@@ -54,11 +58,12 @@ def format_available_message(locations):
         else:
             day_string = ""
 
-        message += "\n• {}{}{}. Sign up <{}|here>{}{}".format(
+        message += "\n• {}{}{}{}. Sign up <{}|here>{}{}".format(
             "*{}*: ".format(location["state"])
             if (len(states) > 1 and "state" in location)
             else "",
             location["name"],
+            "\n" + location_description + "\n",
             day_string,
             location["link"],
             ", zip code {}".format(location["zip"]) if "zip" in location else "",

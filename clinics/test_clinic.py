@@ -8,6 +8,7 @@ class TestClinic(Clinic):
         "name": "Test Location A",
         "state": "CA",
         "zip": "90210",
+        "locationDescription": "Back behind the barn",
         "earliest_appointment_day": "February 1 2021",
         "latest_appointment_day": "February 28 2021",
     }

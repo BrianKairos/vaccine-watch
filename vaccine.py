@@ -9,6 +9,7 @@ from clinics.hyvee import HyVee
 from clinics.test_clinic import TestClinic
 from clinics.walgreens import Walgreens
 from clinics.walmart import Walmart
+from clinics.riteaid import RiteAid
 from notify.console import Console
 from notify.discord import Discord
 from notify.slack import Slack
@@ -31,6 +32,8 @@ if env_var_is_true("ENABLE_WALGREENS"):
     enabled_clinics.append(Walgreens())
 if env_var_is_true("ENABLE_WALMART"):
     enabled_clinics.append(Walmart())
+if env_var_is_true("ENABLE_RITEAID"):
+    enabled_clinics.append(RiteAid())
 if env_var_is_true("ENABLE_TEST"):
     enabled_clinics.append(TestClinic())
 
