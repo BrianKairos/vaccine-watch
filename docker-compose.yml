@@ -1,4 +1,4 @@
-version: "3.9"
+version: "3.7"
 services:
   clock:
     build: .
@@ -13,7 +13,7 @@ services:
       - .env
   redis:
     image: "redis:alpine"
-    command: redis-server --appendonly yes
+    command: redis-server --port 6379 --appendonly yes
     volumes:
       - redis_data:/data
     ports:
