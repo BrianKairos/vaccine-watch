@@ -11,8 +11,6 @@ from . import Clinic
 
 class RiteAid(Clinic):
     def __init__(self):
-        # self.allow_list = json.loads(os.environ["CVS_ALLOW_LIST"])
-        # self.block_list = json.loads(os.environ.get("CVS_BLOCK_LIST", "{}"))
         self.states = json.loads(os.environ["STATES"])
         self.latitude = json.loads(os.environ["LATITUDE"])
         self.longitude = json.loads(os.environ["LONGITUDE"])
@@ -46,34 +44,6 @@ class RiteAid(Clinic):
                 else:
                     logging.warning("  Query failed for store {}.".format(store['storeNumber']))
 
-                # for location in locations:
-                #     if location["city"] in self.allow_list[state]:
-                #         if location["status"] == "Available":
-                #             if site_locked_out:
-                #                 logging.info(
-                #                     "Would have notified for CVS %s, %s but site is locked out",
-                #                     location["city"],
-                #                     state,
-                #                 )
-                #             else:
-                #                 locations_with_vaccine.append(format_data(location))
-                #         elif location["status"] == "Fully Booked":
-                #             locations_without_vaccine.append(format_data(location))
-                #         else:
-                #             logging.error(
-                #                 "Unknown location status from CVS: %s",
-                #                 location["status"],
-                #             )
-                #     elif (
-                #         state not in self.block_list
-                #         or location["city"] not in self.block_list[state]
-                #     ):
-                #         logging.warning(
-                #             "New city found for CVS: %s, %s. Add to allow list or block list.",
-                #             location["city"],
-                #             state,
-                #         )
-
         except requests.exceptions.RequestException:
             logging.exception(
                 "Bad response from RiteAid",
@@ -95,5 +65,6 @@ def format_data(location):
             " ".join([word.capitalize() for word in location["city"].split(" ")])
         ),
         "locationDescription": location['locationDescription'],
-        "link": "https://www.riteaid.com/services/ext/v2/vaccine/checkSlots?storeNumber={}".format(location['storeNumber']),
+        "link": "https://www.riteaid.com/services/ext/v2/vaccine/checkSlots?storeNumber={}".format(
+            location['storeNumber']),
     }
