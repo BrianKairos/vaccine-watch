@@ -9,6 +9,7 @@ from clinics.hyvee import HyVee
 from clinics.test_clinic import TestClinic
 from clinics.walgreens import Walgreens
 from clinics.walmart import Walmart
+# from clinics.riteaid import RiteAid
 from clinics.riteaid import RiteAid
 from notify.console import Console
 from notify.discord import Discord

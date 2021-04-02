@@ -1,70 +1,65 @@
-import json
-import logging
 import os
+from datetime import datetime
 
-import requests
+from geopy.distance import distance
+from pytz import timezone
 
-from utils import timeout_amount
-
-from . import Clinic
+from .vaccine_spotter import VaccineSpotterClinic
 
 
-class RiteAid(Clinic):
+class RiteAid(VaccineSpotterClinic):
     def __init__(self):
-        self.states = json.loads(os.environ["STATES"])
-        self.latitude = json.loads(os.environ["LATITUDE"])
-        self.longitude = json.loads(os.environ["LONGITUDE"])
-        self.radius = json.loads(os.environ["RADIUS"])
+        self.here = (os.environ["LATITUDE"], os.environ["LONGITUDE"])
+        super().__init__()
 
-    def get_locations(self):
+    def should_include_location(self, location):
+        coordinates = location["geometry"]["coordinates"]
+        longitude, latitude = coordinates
+        return location["properties"]["provider_brand"] == "rite_aid" and distance(
+            self.here, (latitude, longitude)
+        ).miles < int(os.environ["RADIUS"])
 
-        locations_with_vaccine = []
-        locations_without_vaccine = []
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        #     print("{} #{}: {}".format(location["properties"]["provider_brand"],
+        #                               location["properties"]["provider_location_id"],
+        #                               location["properties"]["city"]))
+        #     return True
+        # else:
+        #     dist = distance(self.here, (latitude, longitude)).miles
+        #     print("{} out of range: {}".format(location["properties"]["city"], dist))
 
-        fetch_stores_riteaid_url = 'https://www.riteaid.com/services/ext/v2/stores/getStores?latitude={}&longitude={}&radius={}'.format(
-            self.latitude, self.longitude, self.radius
-        )
-        nearby_stores = requests.get(fetch_stores_riteaid_url, timeout=timeout_amount)
-
+    def format_data(self, location):
+        zone = os.environ.get("TIMEZONE", "US/Pacific")
         try:
-            nearby_stores.raise_for_status()
-            for store in nearby_stores.json()['Data']['stores']:
-                url = "https://www.riteaid.com/services/ext/v2/vaccine/checkSlots?storeNumber={}".format(
-                    store['storeNumber'])
-                logging.info("{} {}: #{}".format(store['city'], store['address'], store['storeNumber']))
-                avail = (requests.get(url=url, headers=headers)).json()
-                if avail['Status'] == "SUCCESS":
-                    logging.info("  {} first doses, {} second doses".format(avail['Data']["slots"]['1'],
-                                                                            avail['Data']['slots']['2']))
-                    if avail['Data']['slots']['1']:
-                        locations_with_vaccine.append(format_data(store))
-                    else:
-                        locations_without_vaccine.append(format_data(store))
-                else:
-                    logging.warning("  Query failed for store {}.".format(store['storeNumber']))
-
-        except requests.exceptions.RequestException:
-            logging.exception(
-                "Bad response from RiteAid",
-            )
+            if location["properties"]["appointments_last_fetched"]:
+                appointments_last_fetched = (
+                    datetime.fromisoformat(
+                        location["properties"]["appointments_last_fetched"]
+                    )
+                        .astimezone(timezone(zone))
+                        .strftime("%-I:%M")
+                )
+            else:
+                appointments_last_fetched = None
+        except (
+                ValueError,
+                TypeError,
+        ) as e:  # Python doesn't like 2 digits for decimal fraction of second
+            appointments_last_fetched = None
 
         return {
-            "with_vaccine": locations_with_vaccine,
-            "without_vaccine": locations_without_vaccine,
+            "link": location["properties"]["url"],
+            "id": "{}riteaid-{}".format(
+                os.environ.get("CACHE_PREFIX", ""), location["properties"]["id"]
+            ),
+            "name": "RiteAid {}".format(
+                " ".join(
+                    [
+                        word.capitalize()
+                        for word in location["properties"]["city"].split(" ")
+                    ]
+                )
+            ),
+            "state": location["properties"]["state"],
+            "zip": location["properties"]["postal_code"],
+            "appointments_last_fetched": appointments_last_fetched,
         }
-
-
-def format_data(location):
-    return {
-        "id": "{}riteaid-{}".format(
-            os.environ.get("CACHE_PREFIX", ""), location["storeNumber"]
-        ),
-        "state": location["state"],
-        "name": "RiteAid {}".format(
-            " ".join([word.capitalize() for word in location["city"].split(" ")])
-        ),
-        "locationDescription": location['locationDescription'],
-        "link": "https://www.riteaid.com/services/ext/v2/vaccine/checkSlots?storeNumber={}".format(
-            location['storeNumber']),
-    }

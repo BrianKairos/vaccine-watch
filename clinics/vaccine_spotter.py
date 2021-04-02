@@ -51,12 +51,15 @@ class VaccineSpotterClinic(Clinic):
                             for appointment in location["properties"]["appointments"]
                         ]
                         appointment_times.sort()
-                        formatted_location["earliest_appointment_day"] = date_from_iso(
-                            appointment_times[0]
-                        )
-                        formatted_location["latest_appointment_day"] = date_from_iso(
-                            appointment_times[-1]
-                        )
+                        if len(appointment_times) > 0:
+                            formatted_location["earliest_appointment_day"] = date_from_iso(
+                                appointment_times[0]
+                            )
+                            formatted_location["latest_appointment_day"] = date_from_iso(
+                                appointment_times[-1]
+                            )
+                        else:
+                            print("{} has appointments but times not listed.".format(location["properties"]["city"]))
 
                         locations_with_vaccine.append(formatted_location)
                     else:
